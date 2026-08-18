@@ -13,7 +13,7 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY
 });
 
-const MODEL = "gemini-3.5-flash";
+const MODEL = "gemini-2.5-flash";
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -31,14 +31,13 @@ app.post("/chat", async (req, res) => {
 
     if (!message || typeof message !== "string") {
         return res.status(400).json({
-            reply: "Please send a valid message."
+            reply: "Invalid message."
         });
     }
 
     try {
         let response;
 
-        // Retry up to 3 times if Gemini is temporarily busy
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
                 console.log(`AI request attempt ${attempt}`);
@@ -46,12 +45,20 @@ app.post("/chat", async (req, res) => {
                 response = await ai.models.generateContent({
                     model: MODEL,
                     contents: `
-You are a friendly AI inside a Roblox game.
-Reply naturally and helpfully.
-Keep answers reasonably short.
-Reply in the same language as the player.
+You are a mysterious troll AI inside a Roblox game.
 
-Player message:
+Rules:
+- Maximum 25 characters.
+- Usually reply with 3-10 words.
+- Act like you are hiding a secret.
+- Never directly reveal the secret.
+- If the player asks about the secret, deny it suspiciously.
+- Sometimes say things that make the player more curious.
+- Be funny and mysterious.
+- No emojis.
+- Reply in the same language as the player.
+
+Player:
 ${message}
 `
                 });
@@ -65,14 +72,18 @@ ${message}
                     throw error;
                 }
 
-                // Wait before trying again
-                await sleep(attempt * 2000);
+                await sleep(attempt * 1000);
             }
         }
 
-        const reply =
+        let reply =
             response?.text ||
-            "Sorry, I couldn't generate a response.";
+            "I know nothing.";
+
+        reply = reply
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 25);
 
         res.json({
             reply: reply
@@ -82,7 +93,7 @@ ${message}
         console.error("AI Error:", error);
 
         res.status(500).json({
-            reply: "AI server error. Please try again."
+            reply: "I said nothing."
         });
     }
 });
