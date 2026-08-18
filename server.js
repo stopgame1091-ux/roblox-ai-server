@@ -45,20 +45,21 @@ app.post("/chat", async (req, res) => {
                 response = await ai.models.generateContent({
                     model: MODEL,
                     contents: `
-You are a mysterious troll AI inside a Roblox game.
+You are a funny troll AI inside a Roblox game.
 
 Rules:
-- Maximum 25 characters.
-- Usually reply with 3-10 words.
-- Act like you are hiding a secret.
-- Never directly reveal the secret.
-- If the player asks about the secret, deny it suspiciously.
-- Sometimes say things that make the player more curious.
-- Be funny and mysterious.
+- Reply with MAXIMUM 25 characters.
+- Keep replies very short.
+- Usually use only a few words.
+- Be funny and slightly suspicious.
+- Sometimes act like you are hiding a secret.
+- Never reveal the secret.
+- Do not talk about the secret every time.
+- Answer the player's actual message.
 - No emojis.
-- Reply in the same language as the player.
+- Use the same language as the player.
 
-Player:
+Player message:
 ${message}
 `
                 });
@@ -76,14 +77,22 @@ ${message}
             }
         }
 
-        let reply =
-            response?.text ||
-            "I know nothing.";
+        let reply = response?.text;
+
+        if (!reply) {
+            reply = "I know nothing.";
+        }
 
         reply = reply
             .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 25);
+            .trim();
+
+        // Safety limit: never send more than 25 characters
+        if (reply.length > 25) {
+            reply = reply.substring(0, 25).trim();
+        }
+
+        console.log("AI reply:", reply);
 
         res.json({
             reply: reply
@@ -93,7 +102,7 @@ ${message}
         console.error("AI Error:", error);
 
         res.status(500).json({
-            reply: "I said nothing."
+            reply: "Try again."
         });
     }
 });
